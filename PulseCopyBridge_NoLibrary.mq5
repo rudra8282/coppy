@@ -197,17 +197,27 @@ bool FetchSignals(string &json)
 //+------------------------------------------------------------------+
 string JsonGetRawValue(const string json, const string key, int startPos=0)
   {
-   string search = key + ":";
-   int pos = StringFind(json, search, startPos);
+   // Try searching for quoted key first: "key":
+   string search_quoted = "\"" + key + "\":";
+   int pos = StringFind(json, search_quoted, startPos);
+   
+   // If not found, try unquoted: key:
+   string search_plain = key + ":";
    if(pos < 0)
      {
-      Print("DEBUG JsonGetRawValue: Could not find '", search, "' starting from pos ", startPos);
+      pos = StringFind(json, search_plain, startPos);
+     }
+   
+   if(pos < 0)
+     {
+      Print("DEBUG JsonGetRawValue: Could not find '", search_quoted, "' or '", search_plain, "' starting from pos ", startPos);
       return("");
      }
 
-   Print("DEBUG JsonGetRawValue: Found '", search, "' at position ", pos);
+   Print("DEBUG JsonGetRawValue: Found key at position ", pos, ", valueStart=", pos + (StringFind(json, search_quoted, startPos) >= 0 ? StringLen(search_quoted) : StringLen(search_plain)));
 
-   int valueStart = pos + StringLen(search);
+   int valueStart = pos + (StringFind(json, "\"" + key + "\":", startPos) >= 0 ? StringLen("\"" + key + "\":") : StringLen(key + ":"));
+   Print("DEBUG JsonGetRawValue: valueStart=", valueStart);
    while(valueStart < StringLen(json) &&
          (StringGetCharacter(json, valueStart) == ' ' ||
           StringGetCharacter(json, valueStart) == '\r' ||

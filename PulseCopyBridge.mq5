@@ -208,12 +208,23 @@ bool FetchSignals(string &json)
 //+------------------------------------------------------------------+
 string JsonGetRawValue(const string json, const string key, int startPos=0)
   {
-   string search = key + ":";
-   int pos = StringFind(json, search, startPos);
+   // Try searching for quoted key first: "key":
+   string search_quoted = "\"" + key + "\":";
+   int pos = StringFind(json, search_quoted, startPos);
+   
+   // If not found, try unquoted: key:
+   string search_plain = key + ":";
+   if(pos < 0)
+     {
+      pos = StringFind(json, search_plain, startPos);
+     }
+   
    if(pos < 0)
       return("");
 
-   int valueStart = pos + StringLen(search);
+   int valueStart = pos + (StringFind(json, search_quoted, startPos) >= 0 ? StringLen(search_quoted) : StringLen(search_plain));
+
+   // Skip whitespace
    while(valueStart < StringLen(json) &&
          (StringGetCharacter(json, valueStart) == ' ' ||
           StringGetCharacter(json, valueStart) == '\r' ||
